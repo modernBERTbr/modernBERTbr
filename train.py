@@ -1,34 +1,42 @@
-from transformers import AutoTokenizer, DataCollatorForLanguageModeling, Trainer, TrainingArguments
+import logging
+
+from datasets import Dataset
+from datasets.utils.logging import disable_progress_bar
+from transformers import (
+    AutoTokenizer,
+    DataCollatorForLanguageModeling,
+    Trainer,
+    TrainingArguments,
+)
 from transformers.models.modernbert import ModernBertConfig, ModernBertForMaskedLM
 
+
 def train():
+    # Disable progress bars and verbose logging to reduce clutter
+    disable_progress_bar()
+    logging.getLogger("datasets").setLevel(logging.ERROR)
+    
     # 1. Load WordPiece tokenizer from BERTimbau
     tokenizer = AutoTokenizer.from_pretrained("neuralmind/bert-base-portuguese-cased")
 
     # 2. Create a fresh config for ModernBERT, using BERTimbau's 30.000 vocab size with ModernBERT's paper default hyperparameters
     config = ModernBertConfig(
         vocab_size=tokenizer.vocab_size,
+        pad_token_id=tokenizer.pad_token_id,
     )
 
     # 3. Initialize ModernBERT from scratch
     model = ModernBertForMaskedLM(config)
-
-    # 4. TODO: Load brwac dataset
-    dataset = None
-
-    # 5. Tokenize dataset
-    def tokenize_function(examples):
-        return tokenizer(examples["text"], truncation=True, padding="max_length", max_length=512)
-
-    tokenized_dataset = dataset.map(tokenize_function, batched=True, remove_columns=["text"])
-
-    # 6. Data collator
+   
+    # 4. Load the dataset for training (will load shards as needed)
+    tokenized_dataset = Dataset.load_from_disk('brwac/brwac_tokenized_dataset')
+    
+    # 5. Data collator
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer, mlm=True, mlm_probability=0.15
     )
 
-    # TODO: Adjust training arguments based on hardware
-    # 7. Training arguments
+    # 6. Training arguments
     training_args = TrainingArguments(
         output_dir="./modernbert-br",
         overwrite_output_dir=True,
@@ -38,9 +46,11 @@ def train():
         save_total_limit=2,
         logging_dir="./logs",
         logging_steps=100,
+        dataloader_num_workers=2,  # Reduce number of workers
+        dataloader_pin_memory=False,  # Reduce memory usage
     )
 
-    # 8. Trainer
+    # 7. Trainer
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -48,10 +58,8 @@ def train():
         data_collator=data_collator,
     )
 
-    # 9. Train the model
+    # 8. Train the model
     trainer.train()
-
-
-
+    
 if __name__ == "__main__":
     train()
