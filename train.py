@@ -1,5 +1,4 @@
 import logging
-
 from datasets import Dataset
 from datasets.utils.logging import disable_progress_bar
 from transformers import (
@@ -28,8 +27,8 @@ def train():
     # 3. Initialize ModernBERT from scratch
     model = ModernBertForMaskedLM(config)
    
-    # 4. Load the dataset for training (will load shards as needed)
-    tokenized_dataset = Dataset.load_from_disk('brwac/brwac_tokenized_dataset')
+    # 4. Load the dataset for training
+    tokenized_dataset = Dataset.load_from_disk('brwac/brwac_tokenized_dataset/train') 
     
     # 5. Data collator
     data_collator = DataCollatorForLanguageModeling(
@@ -41,13 +40,14 @@ def train():
         output_dir="./modernbert-br",
         overwrite_output_dir=True,
         num_train_epochs=3,
-        per_device_train_batch_size=16,
+        per_device_train_batch_size=4,
         save_steps=500,
         save_total_limit=2,
         logging_dir="./logs",
+        learning_rate=1e-5,
         logging_steps=100,
-        dataloader_num_workers=2,  # Reduce number of workers
-        dataloader_pin_memory=False,  # Reduce memory usage
+        dataloader_num_workers=2,  
+        dataloader_pin_memory=False, 
     )
 
     # 7. Trainer
