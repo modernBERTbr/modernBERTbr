@@ -11,3 +11,15 @@ wheels/
 
 # Dataset
 brwac/
+dev_anon_split/
+
+# Model
+bert-br/
+modernbert-br/
+
+# Logs
+logs/
+trainer_output
+
+# Google
+google-cloud-sdk/

@@ -2,13 +2,11 @@ from multiprocessing import Pool, cpu_count
 from bs4 import BeautifulSoup
 from ftfy import fix_text
 
-# Function to process one sentence
 def process_sentences(sentences):
     text = ' '.join(sentences)
     text = BeautifulSoup(text, "html.parser").get_text()
     return fix_text(text)
 
-# Generator that yields one sentence at a time
 def sentence_generator(filepath):
     sentence = []
     with open(filepath, 'r', encoding='utf-8') as f:
